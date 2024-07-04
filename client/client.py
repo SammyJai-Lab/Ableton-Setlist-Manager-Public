@@ -170,7 +170,7 @@ def main(args):
     #def button_function(): 
         #client.send_message("/live/song/cue_point/jump", [cue[2][0]])
         #client.send_message("/live/song/start_playing")
-    app = App()
+
 
     app.mainloop()
         
