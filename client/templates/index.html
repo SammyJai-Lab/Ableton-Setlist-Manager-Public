@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ableton Setlist Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='materialize.min.css') }}?v={{ cache_buster }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}?v={{ cache_buster }}">
+    <script>
+        function deleteAllCookies() {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i];
+                const eqPos = cookie.indexOf("=");
+                const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            }
+        }
+        window.onload = deleteAllCookies;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="center-align white-text">Ableton Setlist Manager</h1>
+        <div id="setlist" class="section">
+            <h5 class="white-text">Setlist</h5>
+            <ul class="collection" id="cue-list">
+                <!-- Cue points will be populated here -->
+            </ul>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <div class="container center-align" style="display: flex; align-items: center;">
+            <div id="now-playing" class="white-text" style="flex: 1;">&nbsp;</div>
+            <button id="play-button" class="btn-floating btn-large waves-effect waves-light">
+                <i class="material-icons">play_arrow</i>
+            </button>
+            <button id="stop-button" class="btn-floating btn-large waves-effect waves-light">
+                <i class="material-icons">stop</i>
+            </button>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='jquery-3.6.0.min.js') }}?v={{ cache_buster }}"></script>
+    <script src="{{ url_for('static', filename='materialize.min.js') }}?v={{ cache_buster }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}?v={{ cache_buster }}"></script>
+</body>
+</html>

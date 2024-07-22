@@ -1,12 +1,15 @@
 import argparse
 import threading
+import time
+from flask import Flask, request, jsonify, render_template
 from pythonosc.udp_client import SimpleUDPClient, OscBundle, OscMessageBuilder
 from pythonosc.osc_bundle_builder import OscBundleBuilder
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import ThreadingOSCUDPServer
 from typing import Callable, Iterable
+import datetime
 
-import customtkinter
+app = Flask(__name__)
 
 REMOTE_PORT = 11000
 LOCAL_PORT = 11001
@@ -155,28 +158,56 @@ class AbletonOSCClient:
             raise RuntimeError("No response received to query: %s" % address)
         return rv
 
-def main(args):
-    client = AbletonOSCClient(args.hostname, args.port)
-    # Task 01 Get all locator names and poositions
-    cue_qur = client.query("/live/song/get/cue_points")
-    cue = []
-    for i in range(0, len(cue_qur), 2):
-        cue.append([cue_qur[i], cue_qur[i + 1]])
-    cue = sorted(cue, key=lambda x: x[1])
+@app.route('/')
+def index():
+    cache_buster = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    return render_template('index.html', cache_buster=cache_buster)
 
-    customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
-    customtkinter.set_default_color_theme("dark-blue")  # Themes: blue (default), dark-blue, green
+@app.route('/get_cue_points', methods=['GET'])
+def get_cue_points():
+    cue_points = ableton_client.query("/live/song/get/cue_points")
+    cue_points_list = []
+    for i in range(0, len(cue_points), 2):
+        cue_points_list.append([cue_points[i], cue_points[i + 1]])
+    sorted_cue_points = sorted(cue_points_list, key=lambda x: x[1])
+    return jsonify(sorted_cue_points)
 
-    #def button_function(): 
-        #client.send_message("/live/song/cue_point/jump", [cue[2][0]])
-        #client.send_message("/live/song/start_playing")
+@app.route('/play_song', methods=['POST'])
+def play_song():
+    data = request.json
+    cue_index = data['cue_index']
+    cue_points = data['cue_points']
+    selected_cue = cue_points[cue_index]
+    ableton_client.send_message("/live/song/cue_point/jump", [selected_cue[0]])
+    ableton_client.send_message("/live/song/start_playing")
+    start_pos = selected_cue[1]
+    stop_pos = None
+    for cue in cue_points[cue_index:]:
+        if cue[0].lower() == "stop":
+            stop_pos = cue[1]
+            break
+    return jsonify({'start_pos': start_pos, 'stop_pos': stop_pos})
 
+@app.route('/monitor_playhead', methods=['POST'])
+def monitor_playhead():
+    stop_pos = request.json['stop_pos']
+    while True:
+        current_position = ableton_client.query("/live/song/get/current_song_time")[0]
+        if abs(current_position - stop_pos) < 1:
+            ableton_client.send_message("/live/song/stop_playing")
+            break
+        time.sleep(TICK_DURATION)
+    return jsonify({'status': 'stopped'})
 
-    app.mainloop()
-        
+@app.route('/stop_song', methods=['POST'])
+def stop_song():
+    ableton_client.send_message("/live/song/stop_playing")
+    return jsonify({'status': 'stopped'})
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Client for AbletonOSC")
     parser.add_argument("--hostname", type=str, default="127.0.0.1")
     parser.add_argument("--port", type=str, default=11000)
     args = parser.parse_args()
-    main(args)
+
+    ableton_client = AbletonOSCClient(args.hostname, int(args.port))
+    app.run(host='0.0.0.0', port=5000)
