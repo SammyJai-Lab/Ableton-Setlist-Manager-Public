@@ -6,6 +6,7 @@ from . import osc_bundle
 from . import osc_message
 from .parsing import osc_types
 
+
 # Shortcut to specify an immediate execution of messages in the bundle.
 IMMEDIATELY = osc_types.IMMEDIATELY
 
