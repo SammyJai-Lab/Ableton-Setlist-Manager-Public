@@ -18,6 +18,7 @@ LOCAL_PORT = 11001
 # An Ableton Live tick is 100ms. This constant is typically used for timeouts,
 # and factors in some extra time for processing overhead.
 #--------------------------------------------------------------------------------
+
 TICK_DURATION = 0.150
 
 class AbletonOSCClient:
